@@ -6,7 +6,7 @@ include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include($ENV{PICO_SDK_PATH}/tools/CMakeLists.txt)
 
 # Set name of project (as PROJECT_NAME) and C/C++ standards
-project(blink_pio C CXX ASM)
+project(pio_debounce C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -33,5 +33,5 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Enable usb output, disable uart output
-pico_enable_stdio_usb(${PROJECT_NAME} 0)
-pico_enable_stdio_uart(${PROJECT_NAME} 1)
+#pico_enable_stdio_usb(${PROJECT_NAME} 0)
+#pico_enable_stdio_uart(${PROJECT_NAME} 1)
