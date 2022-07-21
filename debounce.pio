@@ -1,0 +1,74 @@
+; This program is intended for use with a button connected to ground and a pull-up resistor.
+; It is written to prioritize reaction time on pressing down the button and this takes 
+; approximately (2?) clock cycles.
+; Button release is registered after approximately (2 * debounce_counter_value) clock cycles.
+
+; Since this program is not really time sensitive I decided to update the debounce time 
+; within the press release loop. This gives the user more flexibility in changing the 
+; debounce time on the fly. It is updated after each button release.
+
+; Todo:
+; - Figure out which way to notify the user of button press/release (RX fifo and/or IRQ).
+; - Let the user set a time instead of clock cycles.
+
+; Worth trying:
+; - Directly using the OSR as "debounce_time" instead of loading it into x.
+; - Use .warp and .warp_target to jump without wasting an instruction.
+
+; y is the counter (counts down)
+; x is the debounce duration
+
+.program debounce
+
+    set x 31                        ; Preload a debounce time for when the user has not set anything (keep this?)
+released:
+                                    ; Get debounce time from user
+    pull noblock                    ; If available put TX fifo data in OSR. Else put X in OSR
+    mov x osr                       ; Put the value of OSR in X
+
+    wait 0 pin 0                    ; Wait until pressed
+    set pins 0                      ; TODO: notify user of button press (for now use debug pin as output)
+pressed_loop:
+    jmp pin signal_high
+    mov y x                         ; Reset counter to debounce time 
+    jmp pressed_loop
+    
+signal_high:
+    jmp y-- pressed_loop            ; If the counter has not reached 0 then decrement it and restart the loop
+    set pins 1                      ; TODO: notify user of button release (for now use debug pin as output)
+    jmp released                    ; Go back to released                             
+
+% c-sdk {
+static inline void debounce_program_init(PIO pio, uint8_t sm, uint offset, float frequency, uint8_t debouncePin, uint8_t debugPin) 
+{
+    pio_sm_config c = debounce_program_get_default_config(offset);
+
+    // Set this pin's GPIO function (connect PIO to the pad)
+    pio_gpio_init(pio, debouncePin);
+    pio_gpio_init(pio, debugPin);
+
+    // Set the in pins
+    sm_config_set_in_pins(&c, debouncePin);
+
+    // Map the JMP pin to the `debouncePin` parameter of this function.
+    sm_config_set_jmp_pin (&c, debouncePin);
+
+    // Set the set pins
+    sm_config_set_set_pins(&c, debugPin, 1);
+
+    // Set the clock divider to 10kHz
+    float div = clock_get_hz(clk_sys) / frequency;
+    sm_config_set_clkdiv(&c, div);
+
+    // Load our configuration, and jump to the start of the program
+    pio_sm_init(pio, sm, offset, &c);
+
+    // Set the state machine running
+    pio_sm_set_enabled(pio, sm, true);
+}
+
+static inline void debounce_program_set_debounce(PIO pio, uint8_t sm, uint32_t debounceCycles)
+{
+    pio_sm_put(pio, sm, debounceCycles);
+}
+%}
