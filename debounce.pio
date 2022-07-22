@@ -10,10 +10,6 @@
 ; Todo:
 ; - Figure out which way to notify the user of button press/release (RX fifo and/or IRQ).
 ; - Let the user set a time instead of clock cycles.
-; - Remove clock setting (why run slower than max frequency?)
-
-; Worth trying:
-; - Use .warp and .warp_target to jump without wasting an instruction.
 
 ; y is the counter (counts down)
 ; x is the debounce duration
@@ -40,7 +36,7 @@ signal_high:
     jmp released                    ; Go back to released                             
 
 % c-sdk {
-static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint debouncePin, uint debugPin, float frequency) 
+static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint debouncePin, uint debugPin) 
 {
     pio_sm_config c = debounce_program_get_default_config(offset);
 
@@ -54,9 +50,6 @@ static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint deb
 
     pio_sm_set_consecutive_pindirs(pio, sm, debouncePin, 1, false);
     pio_sm_set_consecutive_pindirs(pio, sm, debugPin, 1, true);
-
-    float div = clock_get_hz(clk_sys) / frequency;
-    sm_config_set_clkdiv(&c, div);
 
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
