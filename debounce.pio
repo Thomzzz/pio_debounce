@@ -39,35 +39,29 @@ signal_high:
     jmp released                    ; Go back to released                             
 
 % c-sdk {
-static inline void debounce_program_init(PIO pio, uint8_t sm, uint offset, float frequency, uint8_t debouncePin, uint8_t debugPin) 
+static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint debouncePin, uint debugPin, float frequency) 
 {
     pio_sm_config c = debounce_program_get_default_config(offset);
 
-    // Set this pin's GPIO function (connect PIO to the pad)
     pio_gpio_init(pio, debouncePin);
     pio_gpio_init(pio, debugPin);
+    gpio_pull_up(debouncePin);
 
-    // Set the in pins
     sm_config_set_in_pins(&c, debouncePin);
-
-    // Map the JMP pin to the `debouncePin` parameter of this function.
     sm_config_set_jmp_pin (&c, debouncePin);
-
-    // Set the set pins
     sm_config_set_set_pins(&c, debugPin, 1);
 
-    // Set the clock divider to 10kHz
+    pio_sm_set_consecutive_pindirs(pio, sm, debouncePin, 1, false);
+    pio_sm_set_consecutive_pindirs(pio, sm, debugPin, 1, true);
+
     float div = clock_get_hz(clk_sys) / frequency;
     sm_config_set_clkdiv(&c, div);
 
-    // Load our configuration, and jump to the start of the program
     pio_sm_init(pio, sm, offset, &c);
-
-    // Set the state machine running
     pio_sm_set_enabled(pio, sm, true);
 }
 
-static inline void debounce_program_set_debounce(PIO pio, uint8_t sm, uint32_t debounceCycles)
+static inline void debounce_program_set_debounce(PIO pio, uint sm, uint debounceCycles)
 {
     pio_sm_put(pio, sm, debounceCycles);
 }
