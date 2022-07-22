@@ -1,15 +1,16 @@
-; This program is intended for use with a button connected to ground and a pull-up resistor.
-; It is written to prioritize reaction time on pressing down the button and this takes 
-; approximately (2?) clock cycles.
-; Button release is registered after approximately (2 * debounce_counter_value) clock cycles.
+; This program is intended for use with a button connected to ground. The pull-up resistor
+; is already initialized.
+; This program is written to prioritize reaction time on pressing down the button and this 
+; takes 2 clock cycles.
+; Button release is registered after approximately (2 * numberOfCounterLoops) clock cycles.
 
 ; Since this program is not really time sensitive I decided to update the debounce time 
 ; within the press release loop. This gives the user more flexibility in changing the 
-; debounce time on the fly. It is updated after each button release.
+; debounce time on the fly. It is updated after each button release. The debounce time must
+; be set before use.
 
 ; Todo:
 ; - Figure out which way to notify the user of button press/release (RX fifo and/or IRQ).
-; - Let the user set a time instead of clock cycles.
 
 ; y is the counter (counts down)
 ; x is the debounce duration
@@ -55,8 +56,10 @@ static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint deb
     pio_sm_set_enabled(pio, sm, true);
 }
 
-static inline void debounce_program_set_debounce(PIO pio, uint sm, uint debounceCycles)
+static inline void debounce_program_set_debounce(PIO pio, uint sm, float debounceDurationMs)
 {
-    pio_sm_put(pio, sm, debounceCycles);
+    float tickDurationMs = 1000.0f / clock_get_hz(clk_sys);                 // The duration of 1 clock tick expressed in milliseconds
+    uint numberOfCounterLoops = debounceDurationMs / (2 * tickDurationMs);  // 1 count loop takes 2 clock ticks
+    pio_sm_put(pio, sm, numberOfCounterLoops);
 }
 %}
