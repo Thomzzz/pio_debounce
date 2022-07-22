@@ -10,9 +10,9 @@
 ; Todo:
 ; - Figure out which way to notify the user of button press/release (RX fifo and/or IRQ).
 ; - Let the user set a time instead of clock cycles.
+; - Remove clock setting (why run slower than max frequency?)
 
 ; Worth trying:
-; - Directly using the OSR as "debounce_time" instead of loading it into x.
 ; - Use .warp and .warp_target to jump without wasting an instruction.
 
 ; y is the counter (counts down)
@@ -20,7 +20,8 @@
 
 .program debounce
 
-    set x 31                        ; Preload a debounce time for when the user has not set anything (keep this?)
+    pull block                      ; Force the user to set the debounce time
+    mov x osr                       ;
 released:
                                     ; Get debounce time from user
     pull noblock                    ; If available put TX fifo data in OSR. Else put X in OSR
