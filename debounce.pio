@@ -18,9 +18,9 @@
 .program debounce
 
     pull block                      ; Force the user to set the debounce time
-    mov x osr                       ;
-    set y 0                         ; TODO: check if necessary
-released:
+    mov x osr
+
+.wrap_target ;released
                                     ; Get debounce time from user
     pull noblock                    ; If available put TX fifo data in OSR. Else put X in OSR
     mov x osr                       ; Put the value of OSR in X
@@ -41,7 +41,7 @@ signal_high:
     set y 0
     mov isr y                       ; Set ISR to 0
     push noblock                    ; Send state to user
-    jmp released                    ; Go back to released                             
+.wrap
 
 % c-sdk {
 static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint debouncePin, uint debugPin) 
