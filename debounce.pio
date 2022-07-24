@@ -18,14 +18,18 @@
 .program debounce
 
     pull block                      ; Force the user to set the debounce time
-    mov x osr                       ;
-released:
+    mov x osr
+
+.wrap_target ;released
                                     ; Get debounce time from user
     pull noblock                    ; If available put TX fifo data in OSR. Else put X in OSR
     mov x osr                       ; Put the value of OSR in X
 
     wait 0 pin 0                    ; Wait until pressed
-    set pins 0                      ; TODO: notify user of button press (for now use debug pin as output)
+    set pins 1                      ; Set debug pin low (TODO: remove at some point)
+    set y 1
+    mov isr y                       ; Set ISR to 1
+    push noblock                    ; Send state to user
 pressed_loop:
     jmp pin signal_high
     mov y x                         ; Reset counter to debounce time 
@@ -33,8 +37,11 @@ pressed_loop:
     
 signal_high:
     jmp y-- pressed_loop            ; If the counter has not reached 0 then decrement it and restart the loop
-    set pins 1                      ; TODO: notify user of button release (for now use debug pin as output)
-    jmp released                    ; Go back to released                             
+    set pins 0                      ; Set debug pin high (TODO: remove at some point)
+    set y 0
+    mov isr y                       ; Set ISR to 0
+    push noblock                    ; Send state to user
+.wrap
 
 % c-sdk {
 static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint debouncePin, uint debugPin) 
@@ -61,5 +68,26 @@ static inline void debounce_program_set_debounce(PIO pio, uint sm, float debounc
     float tickDurationMs = 1000.0f / clock_get_hz(clk_sys);                 // The duration of 1 clock tick expressed in milliseconds
     uint numberOfCounterLoops = debounceDurationMs / (2 * tickDurationMs);  // 1 count loop takes 2 clock ticks
     pio_sm_put(pio, sm, numberOfCounterLoops);
+}
+
+static inline bool debounce_program_get_button_pressed(PIO pio, uint sm)
+{
+    // The static variable keeps its value across multiple function calls
+    // This variable keeps track of the button state for all 8 possible state machines
+    static uint buttonStates = 0;
+
+    // Get the index of the button state
+    uint index = (pio == pio0) ? sm : 4 + sm;
+
+    // Drain the buffer and only keep the last state as this is the most recent one
+    while(!pio_sm_is_rx_fifo_empty(pio, sm))
+    {
+        if(pio_sm_get(pio, sm) != 0)
+            buttonStates |= (1 << index);
+        else
+            buttonStates &= ~(1 << index);
+    }
+
+    return ((buttonStates >> index) & 1);
 }
 %}
