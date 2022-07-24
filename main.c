@@ -3,28 +3,45 @@
 #include "hardware/clocks.h"
 #include "debounce.pio.h"
 
-int main() {
+int main() 
+{
+    static const uint8_t debugPin = 25;
 
-    static const uint debouncePin = 6;
-    static const uint debugPin = 7;
-    static const uint ledPin = 8;
+    // Load the debounce program in both pio's
+    uint offset0 = pio_add_program(pio0, &debounce_program);
+    uint offset1 = pio_add_program(pio1, &debounce_program);
 
-    // Configure PIO
-    PIO pio = pio0;
-    uint sm = 0;
-    uint offset = pio_add_program(pio, &debounce_program);
-    debounce_program_init(pio, sm, offset, debouncePin, debugPin);
-    pio_sm_set_enabled(pio, sm, true);
-    debounce_program_set_debounce(pio, sm, 10.0f); // Set debounce (10ms)
+    // Initialize all 8 statemachines across the 2 pio's
+    // (debugPin only works for pio1 for some reason, but that does not matter)
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        PIO pio = (i < 4) ? pio0 : pio1;
+        uint8_t sm = i % 4;
 
-    // Set led pin
-    gpio_init(ledPin);
-    gpio_set_dir(ledPin, GPIO_OUT);
+        if (i < 4)
+            debounce_program_init(pio, sm, offset0, i, debugPin);
+        else
+            debounce_program_init(pio, sm, offset1, i, debugPin);
+          
+        pio_sm_set_enabled(pio, sm, true);
+        debounce_program_set_debounce(pio, sm, 10.0f); // Set debounce (10ms)
+    }
+
+    // Set output pins from 8 to 15
+    for (uint8_t i = 0; i < 8; i++)
+    {  
+        gpio_init(i + 8);
+        gpio_set_dir(i + 8, GPIO_OUT);
+    }
 
     while (true) 
     {
-        bool buttonPressed = debounce_program_get_button_pressed(pio, sm);
-        gpio_put(ledPin, buttonPressed);
-        //sleep_ms(1000);
+        // Output the state of all buttons
+        for (uint8_t i = 0; i < 8; i++)
+        {
+            PIO pio = (i < 4) ? pio0 : pio1;
+            uint8_t sm = i % 4;
+            gpio_put(i + 8, debounce_program_get_button_pressed(pio, sm));
+        } 
     }
 }
