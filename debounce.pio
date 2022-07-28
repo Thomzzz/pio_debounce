@@ -26,7 +26,6 @@
     mov x osr                       ; Put the value of OSR in X
 
     wait 0 pin 0                    ; Wait until pressed
-    set pins 1                      ; Set debug pin low (TODO: remove at some point)
     set y 1
     mov isr y                       ; Set ISR to 1
     push noblock                    ; Send state to user
@@ -37,27 +36,23 @@ pressed_loop:
     
 signal_high:
     jmp y-- pressed_loop            ; If the counter has not reached 0 then decrement it and restart the loop
-    set pins 0                      ; Set debug pin high (TODO: remove at some point)
     set y 0
     mov isr y                       ; Set ISR to 0
     push noblock                    ; Send state to user
 .wrap
 
 % c-sdk {
-static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint debouncePin, uint debugPin) 
+static inline void debounce_program_init(PIO pio, uint sm, uint offset, uint debouncePin) 
 {
     pio_sm_config c = debounce_program_get_default_config(offset);
 
     pio_gpio_init(pio, debouncePin);
-    pio_gpio_init(pio, debugPin);
     gpio_pull_up(debouncePin);
 
     sm_config_set_in_pins(&c, debouncePin);
     sm_config_set_jmp_pin (&c, debouncePin);
-    sm_config_set_set_pins(&c, debugPin, 1);
 
     pio_sm_set_consecutive_pindirs(pio, sm, debouncePin, 1, false);
-    pio_sm_set_consecutive_pindirs(pio, sm, debugPin, 1, true);
 
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
