@@ -12,9 +12,9 @@ My usecase for this debounce program was a keypad used for rithm games. It shoul
 * User can set a debounce time at runtime.
 * Debounce time is updated after every button release.
 * User can get the state of a button using a polling method.
-* The state machines do not set interrups (yet?)
+* The state machines do not set interrupts (yet?)
 
-## Use
+## Using PIO debounce
 ```c
 // Include these headers
 #include "pico/stdlib.h"
