@@ -9,7 +9,7 @@ My usecase for this debounce program was a keypad used for rhythm games. It shou
 * Built-in pull-up resistor is enabled by the debounce program.
 * Can be used on all 8 PIO state machines, so up to 8 buttons.
 * Uses 15 out of the 32 instructions of the PIO instruction memory.
-* User can set a debounce time at runtime.
+* User can set a debounce time in milliseconds at runtime.
 * Debounce time is updated after every button release.
 * User can get the state of a button using a polling method.
 * The state machines do not set interrupts (yet?)
