@@ -57,4 +57,4 @@ int main()
 ## State diagram
 The state diagram describes the behaviour of the PIO state machine.
 
-![State diagram](https://user-images.githubusercontent.com/33899330/181623192-9c733956-471b-493d-9ed6-40da6a4b53b3.svg)
+![StateDiagram drawio](https://user-images.githubusercontent.com/33899330/181855359-7dc4ba36-1a15-42b5-83bd-4ff44233894f.svg)
