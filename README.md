@@ -37,7 +37,7 @@ int main()
 
   // Initialize one state machine with the pin to be used as input.
   // GPIO and pull-up initialization are done by the pio program.
-  debounce_program_init(pio, sm, offset, debouncePin, debugPin);
+  debounce_program_init(pio, sm, offset, debouncePin);
 
   // Start a state machine.
   pio_sm_set_enabled(pio, sm, true);
